@@ -1,5 +1,5 @@
+using CutilloRigby.Input.Gamepad;
 using CutilloRigby.Output.Servo;
-using System.Device.Pwm;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -8,23 +8,25 @@ namespace CutilloRigby.DesireRc.Device;
 public sealed class TBLE01_ESC : IHostedService
 {
     private const byte _channel = 0;
+    private const byte _forwardTrigger = 4;
+    private const byte _reverseTrigger = 5;
+    private const byte _xButton = 3;
 
-    private readonly IServoState _servoSettings;
-    private readonly IServoMap _servoMap;
+    private readonly IGamepadState _gamepadState;
+    private readonly IGamepadInputChanged _gamepadInputChanged;
+    private readonly IServoState _servoState;
     private readonly StatusLed _statusLed;
-    
-    private readonly PwmChannel _drivePwm;
     
     private DrivingMode _drivingMode = DrivingMode.ForwardOnly;
 
-    public TBLE01_ESC(IServoState servoSettings, IServoMap servoMap, StatusLed statusLed, ILogger<TBLE01_ESC> logger)
+    public TBLE01_ESC(IGamepadState gamepadState, IGamepadInputChanged gamepadInputChanged, IServoState servoState, 
+        StatusLed statusLed, ILogger<TBLE01_ESC> logger)
     {
-        _servoSettings = servoSettings ?? throw new ArgumentNullException(nameof(servoSettings));
-        _servoMap = servoMap ?? throw new ArgumentNullException(nameof(servoMap));
+        _gamepadState = gamepadState ?? throw new ArgumentNullException(nameof(gamepadState));
+        _gamepadInputChanged = gamepadInputChanged ?? throw new ArgumentNullException(nameof(gamepadInputChanged));
+        _servoState = servoState ?? throw new ArgumentNullException(nameof(servoState));
         _statusLed = statusLed ?? throw new ArgumentNullException(nameof(statusLed));
         SetLogHandlers(logger ?? throw new ArgumentNullException(nameof(logger)));
-
-        _drivePwm = PwmChannel.Create(0, _channel, 50, _servoMap[0]);
     }
 
     public DrivingMode DrivingMode
@@ -39,53 +41,97 @@ public sealed class TBLE01_ESC : IHostedService
     }
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        if (!_servoState.HasChannel(_channel))
+            return Task.CompletedTask;
+
+        _gamepadInputChanged.AxisChanged += Gamepad_AxisChanged;
         return Task.CompletedTask;
     }
 
-    private async Task ExecuteAsync(CancellationToken cancellationToken = default)
+    private void Gamepad_AxisChanged(object? sender, GamepadAxisInputEventArgs eventArgs)
     {
-        if (!_servoSettings.HasChannel(_channel))
+        if (!(eventArgs.Address == _forwardTrigger || eventArgs.Address == _reverseTrigger))
             return;
 
-        byte lastDrive = 127;
-        float dutyCycle = 0;
-        while (!cancellationToken.IsCancellationRequested)
+        byte last = _servoState.GetChannel(_channel);
+        byte current = CurrentDrive();
+        
+        if (last == current || _drivingMode == DrivingMode.Braking)
+            return;
+
+        _statusLed.SetBlueLed(true);
+
+        if ((current <= TBLE01_Deadband_Lower && current >= TBLE01_Minimum) 
+            && _drivingMode == DrivingMode.ForwardOnly)
         {
-            byte currentDrive = _servoSettings.GetChannel(_channel);
-            if (lastDrive != currentDrive && _drivingMode != DrivingMode.Braking)
-            {
-                if ((currentDrive <= TBLE01_Deadband_Lower && currentDrive >= 128) && _drivingMode == DrivingMode.ForwardOnly)
-                {
-                    DrivingMode = DrivingMode.Braking;
-                    
-                    _drivePwm.DutyCycle = _servoMap[128];
-                    await Task.Delay(200);
-        
-                    _drivePwm.DutyCycle = _servoMap[0];
-                    await Task.Delay(800);
-        
-                    DrivingMode = DrivingMode.ReverseEnabled;
-                }
-                else if (currentDrive >= TBLE01_Deadband_Upper && currentDrive < 128)
-                    DrivingMode = DrivingMode.ForwardOnly;
-        
-                currentDrive = _servoSettings.GetChannel(_channel);
+            DrivingMode = DrivingMode.Braking;
+            
+            _servoState.SetChannel(_channel, TBLE01_Minimum);
+            Thread.Sleep(TBLE01_BrakeDuration);
 
-                dutyCycle = _servoMap[currentDrive];
-                _drivePwm.DutyCycle = dutyCycle;
+            _servoState.SetChannel(_channel, TBLE01_Neutral);
+            Thread.Sleep(TBLE01_BrakeWait);
 
-                setInformation_Value(currentDrive, dutyCycle);
-                lastDrive = currentDrive;
-            }
+            DrivingMode = DrivingMode.ReverseEnabled;
+            current = CurrentDrive();
+        }
+        else if (current >= TBLE01_Deadband_Upper && current <= TBLE01_Maximum)
+            DrivingMode = DrivingMode.ForwardOnly;
 
-            await Task.Delay(1);
+        _servoState.SetChannel(_channel, current);
+        setInformation_Value(current);
+
+        last = current;
+
+        _statusLed.SetBlueLed(false);
+    }
+
+    private void Gamepad_ButtonChanged(object? sender, GamepadButtonInputEventArgs eventArgs)
+    {
+        if (eventArgs.Address != _xButton)
+            return;
+
+        _statusLed.SetBlueLed(true);
+
+        if (!eventArgs.Value && DrivingMode == DrivingMode.Braking)
+        {
+            _servoState.SetChannel(_channel, TBLE01_Neutral);
+            Thread.Sleep(TBLE01_BrakeWait);
+            DrivingMode = DrivingMode.ReverseEnabled;
+            var currentDrive= CurrentDrive();
+            _servoState.SetChannel(_channel, currentDrive);
+            setInformation_Value(currentDrive);
+        }
+        else if (eventArgs.Value)
+        {
+            DrivingMode = DrivingMode.Braking;
+
+            if(CurrentDrive() > TBLE01_Deadband_Upper)
+                _servoState.SetChannel(_channel, TBLE01_Minimum);
+            else
+                _servoState.SetChannel(_channel, TBLE01_Neutral);
         }
 
-        _drivePwm.DutyCycle = _servoMap[0];
+        _statusLed.SetBlueLed(false);
+    }
+
+    private byte CurrentDrive()
+    {   
+        short forwardTrigger = _gamepadState.GetAxis(_forwardTrigger);
+        short reverseTrigger = _gamepadState.GetAxis(_reverseTrigger);
+        return (byte)((forwardTrigger - reverseTrigger) >> 9);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        if (!_servoState.HasChannel(_channel))
+            return Task.CompletedTask;
+
+        _gamepadInputChanged.AxisChanged -= Gamepad_AxisChanged;
+
+        _servoState.SetChannel(_channel, TBLE01_Neutral);
+        setInformation_Value(TBLE01_Neutral);
+
         return Task.CompletedTask;
     }
 
@@ -93,17 +139,23 @@ public sealed class TBLE01_ESC : IHostedService
     {
         if (logger.IsEnabled(LogLevel.Information))
         {
-            setInformation_Value = (value, dutyCycle) =>
-                logger.LogInformation("TBLE01 ESC ({channel}) set to {value} (Duty Cycle: {dutyCycle:n3})",
-                    _channel, value, dutyCycle);
+            setInformation_Value = (value) =>
+                logger.LogInformation("TBLE01 ESC ({channel}) set to {value}.",
+                    _channel, value);
             setInformation_Braking = (state) => 
                 logger.LogInformation("TBLE01 ESC ({channel}) driving mode changed to {value}",
                     _channel, state);
         }
     }
 
-    private Action<byte, float> setInformation_Value = (value, dutyCycle) => { };
+    private Action<byte> setInformation_Value = (value) => { };
     private Action<DrivingMode> setInformation_Braking = (state) => { };
+
+    public const byte TBLE01_Minimum = 128; // 4% of -128 as unsigned byte
     public const byte TBLE01_Deadband_Lower = 251; // 4% of -128 as unsigned byte
+    public const byte TBLE01_Neutral = 0;
     public const byte TBLE01_Deadband_Upper = 5; // 4% of 128
+    public const byte TBLE01_Maximum = 127; // 4% of -128 as unsigned byte
+    public const ushort TBLE01_BrakeDuration = 200;
+    public const ushort TBLE01_BrakeWait = 800;
 }
