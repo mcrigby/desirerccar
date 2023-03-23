@@ -45,6 +45,8 @@ public sealed class TBLE01_ESC : IHostedService
             return Task.CompletedTask;
 
         _gamepadInputChanged.AxisChanged += Gamepad_AxisChanged;
+        _gamepadInputChanged.ButtonChanged += Gamepad_ButtonChanged;
+
         return Task.CompletedTask;
     }
 
@@ -128,6 +130,7 @@ public sealed class TBLE01_ESC : IHostedService
             return Task.CompletedTask;
 
         _gamepadInputChanged.AxisChanged -= Gamepad_AxisChanged;
+        _gamepadInputChanged.ButtonChanged -= Gamepad_ButtonChanged;
 
         _servoState.SetChannel(_channel, TBLE01_Neutral);
         setInformation_Value(TBLE01_Neutral);

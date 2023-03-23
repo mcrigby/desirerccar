@@ -40,6 +40,11 @@ public sealed class Steering_Servo : IHostedService
         byte last = _servoState.GetChannel(_channel);
         byte current = (byte)(eventArgs.Value >> 8);
         
+        if (96 < current && current <= 127)
+            current = 96;
+        if (128 <= current && current < 150)
+            current = 150;
+        
         if (last == current)
             return;
 
@@ -55,6 +60,8 @@ public sealed class Steering_Servo : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        _servoState.SetChannel(_channel, 0);
+
         return Task.CompletedTask;
     }
 

@@ -16,6 +16,6 @@ internal sealed class GamepadStartup : IConfigureServices
             
         serviceCollection.AddGamepadController();
 
-        serviceCollection.AddSingleton<GamepadAvailabilityMonitor>();
+        serviceCollection.AddHostedService<GamepadAvailabilityMonitor>();
     }
 }
