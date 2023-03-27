@@ -7,27 +7,23 @@ namespace CutilloRigby.DesireRc.Device;
 
 public sealed class Steering_Servo : IHostedService
 {
-    private const byte _channel = 1;
     private const byte _leftRightStick = 0;
 
     private readonly IGamepadInputChanged _gamepadInputChanged;
-    private readonly IServoState _servoState;
+    private readonly IServo _servo;
     private readonly StatusLed _statusLed;
         
-    public Steering_Servo(IGamepadState gamepadState, IGamepadInputChanged gamepadInputChanged, IServoState servoState, 
-        StatusLed statusLed, ILogger<Steering_Servo> logger)
+    public Steering_Servo(IGamepadState gamepadState, IGamepadInputChanged gamepadInputChanged, 
+        IServo<Steering_Servo> servo, StatusLed statusLed, ILogger<Steering_Servo> logger)
     {
         _gamepadInputChanged = gamepadInputChanged ?? throw new ArgumentNullException(nameof(gamepadInputChanged));
-        _servoState = servoState ?? throw new ArgumentNullException(nameof(servoState));
+        _servo = servo ?? throw new ArgumentNullException(nameof(servo));
         _statusLed = statusLed ?? throw new ArgumentNullException(nameof(statusLed));
         SetLogHandlers(logger ?? throw new ArgumentNullException(nameof(logger)));
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!_servoState.HasChannel(_channel))
-            return Task.CompletedTask;
-
         _gamepadInputChanged.AxisChanged += Gamepad_AxisChanged;
         return Task.CompletedTask;
     }
@@ -37,7 +33,7 @@ public sealed class Steering_Servo : IHostedService
         if (eventArgs.Address != _leftRightStick)
             return;
 
-        byte last = _servoState.GetChannel(_channel);
+        byte last = _servo.Value;
         byte current = (byte)(eventArgs.Value >> 8);
         
         if (96 < current && current <= 127)
@@ -50,7 +46,7 @@ public sealed class Steering_Servo : IHostedService
 
         _statusLed.SetBlueLed(true);
 
-        _servoState.SetChannel(_channel, current);
+        _servo.SetValue(current);
         setInformation_Value(current);
 
         last = current;
@@ -60,7 +56,7 @@ public sealed class Steering_Servo : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _servoState.SetChannel(_channel, 0);
+        _servo.SetValue(0);
 
         return Task.CompletedTask;
     }
@@ -71,7 +67,7 @@ public sealed class Steering_Servo : IHostedService
         {
             setInformation_Value = (value) =>
                 logger.LogInformation("Steering Servo ({channel}) set to {value})", 
-                    _channel, value);
+                    _servo.Name, value);
         }
     }
 
