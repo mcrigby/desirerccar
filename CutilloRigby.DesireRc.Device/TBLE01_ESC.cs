@@ -98,9 +98,7 @@ public sealed class TBLE01_ESC : IHostedService
         if (eventArgs.Address == _aButton)
         {
             _servoMap.Remap((byte)(eventArgs.Value ? 1 : 0));
-            var currentValue = _servo.Value;
-            _servo.SetValue(0);
-            _servo.SetValue(currentValue);
+            _servo.OverwriteValue(_servo.Value);
             setInformation_Map(_servoMap.Name);
         }
 

@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="CutilloRigby.Input.Gamepad" Version="1.0.0" />
-    <PackageReference Include="CutilloRigby.Output.Servo" Version="1.0.6" />
+    <PackageReference Include="CutilloRigby.Output.Servo" Version="1.0.7" />
     <PackageReference Include="CutilloRigby.Startup.Host" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />

@@ -30,13 +30,13 @@ internal sealed class ServoStartup : IConfigureServices
             factory.AddServoMap<TBLE01_ESC>(new RemappableServoMap(new Dictionary<byte, IServoMap>{
                 {0, ServoMap.SplitDualRangeServoMap(
                     rangeMin: -128, rangeNeutral: 0, rangeMax: 127, dutyCycleNeutral: 0.075f,
-                    lowRangeDutyCycleMin: 0.05f, lowRangeDutyCycleMax: 0.07f, 
-                    highRangeDutyCycleMin: 0.077f, highRangeDutyCycleMax: 0.08f,
+                    lowRangeDutyCycleMin: 0.05f, lowRangeDutyCycleMax: 0.06f, 
+                    highRangeDutyCycleMin: 0.08f, highRangeDutyCycleMax: 0.085f,
                     name: "TBLE01 Standard")},
                 {1, ServoMap.SplitDualRangeServoMap(
                     rangeMin: -128, rangeNeutral: 0, rangeMax: 127, dutyCycleNeutral: 0.075f,
-                    lowRangeDutyCycleMin: 0.05f, lowRangeDutyCycleMax: 0.07f, 
-                    highRangeDutyCycleMin: 0.077f, highRangeDutyCycleMax: 0.9f,
+                    lowRangeDutyCycleMin: 0.05f, lowRangeDutyCycleMax: 0.06f, 
+                    highRangeDutyCycleMin: 0.08f, highRangeDutyCycleMax: 0.095f,
                     name: "TBLE01 Boost")}
             }));
         });
