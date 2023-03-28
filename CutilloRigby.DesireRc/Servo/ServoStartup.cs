@@ -17,12 +17,27 @@ internal sealed class ServoStartup : IConfigureServices
 
         serviceCollection.AddServoConfiguration(servoConfigurationDictionary);
         serviceCollection.AddServoMap(configure: factory => {
-            factory.AddServoMap("CutilloRigby.DesireRc.Device.Steering_Servo", ServoMap.CustomServoMap(
-                rangeStart: -128, dutyCycleMin: 0.056f, dutyCycleMax: 0.094f,
-                name: "Steering Servo Map"));
-            factory.AddServoMap("CutilloRigby.DesireRc.Device.TBLE01_ESC", new RemappableServoMap(new Dictionary<byte, IServoMap>{
-                {0, ServoMap.CustomServoMap(rangeStart: -128, dutyCycleMin: 0.068f, dutyCycleMax: 0.082f, name: "TBLE01 Standard")},
-                {1, ServoMap.SignedServoMap(name: "TBLE01 Boost")}
+            var steeringServoMap = ServoMap.StandardServoMap(
+                rangeMin: -128, rangeMax: 127, dutyCycleMin: 0.056f, dutyCycleNeutral: 0.075f,
+                dutyCycleMax: 0.094f, name: "Steering Servo Map");
+
+            factory.AddServoMap<Steering_Servo>(
+                new RemappableServoMap(new Dictionary<byte, IServoMap>{
+                    {0, steeringServoMap},
+                    {1, steeringServoMap.Reverse()}
+                }));
+
+            factory.AddServoMap<TBLE01_ESC>(new RemappableServoMap(new Dictionary<byte, IServoMap>{
+                {0, ServoMap.SplitDualRangeServoMap(
+                    rangeMin: -128, rangeNeutral: 0, rangeMax: 127, dutyCycleNeutral: 0.075f,
+                    lowRangeDutyCycleMin: 0.05f, lowRangeDutyCycleMax: 0.07f, 
+                    highRangeDutyCycleMin: 0.077f, highRangeDutyCycleMax: 0.08f,
+                    name: "TBLE01 Standard")},
+                {1, ServoMap.SplitDualRangeServoMap(
+                    rangeMin: -128, rangeNeutral: 0, rangeMax: 127, dutyCycleNeutral: 0.075f,
+                    lowRangeDutyCycleMin: 0.05f, lowRangeDutyCycleMax: 0.07f, 
+                    highRangeDutyCycleMin: 0.077f, highRangeDutyCycleMax: 0.9f,
+                    name: "TBLE01 Boost")}
             }));
         });
         serviceCollection.AddServo<Steering_Servo>();

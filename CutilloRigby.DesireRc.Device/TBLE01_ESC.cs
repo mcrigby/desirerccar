@@ -46,6 +46,10 @@ public sealed class TBLE01_ESC : IHostedService
         _gamepadInputChanged.AxisChanged += Gamepad_AxisChanged;
         _gamepadInputChanged.ButtonChanged += Gamepad_ButtonChanged;
 
+        _servo.Start();
+        _servo.SetValue(TBLE01_Neutral);
+        setInformation_Value(TBLE01_Neutral);
+
         return Task.CompletedTask;
     }
 
@@ -142,6 +146,7 @@ public sealed class TBLE01_ESC : IHostedService
 
         _servo.SetValue(TBLE01_Neutral);
         setInformation_Value(TBLE01_Neutral);
+        _servo.Stop();
 
         return Task.CompletedTask;
     }
@@ -166,7 +171,7 @@ public sealed class TBLE01_ESC : IHostedService
     private Action<DrivingMode> setInformation_Braking = (state) => { };
     private Action<string> setInformation_Map = (mapName) => { };
 
-    public const byte TBLE01_Minimum = 128; // 4% of -128 as unsigned byte
+    public const byte TBLE01_Minimum = 128;
     public const byte TBLE01_Deadband_Lower = 251; // 4% of -128 as unsigned byte
     public const byte TBLE01_Neutral = 0;
     public const byte TBLE01_Deadband_Upper = 5; // 4% of 128

@@ -25,6 +25,10 @@ public sealed class Steering_Servo : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _gamepadInputChanged.AxisChanged += Gamepad_AxisChanged;
+        _servo.Start();
+        _servo.SetValue(SteeringServo_Neutral);
+        setInformation_Value(SteeringServo_Neutral);
+
         return Task.CompletedTask;
     }
 
@@ -35,11 +39,6 @@ public sealed class Steering_Servo : IHostedService
 
         byte last = _servo.Value;
         byte current = (byte)(eventArgs.Value >> 8);
-        
-        if (96 < current && current <= 127)
-            current = 96;
-        if (128 <= current && current < 150)
-            current = 150;
         
         if (last == current)
             return;
@@ -56,7 +55,11 @@ public sealed class Steering_Servo : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _servo.SetValue(0);
+        _gamepadInputChanged.AxisChanged -= Gamepad_AxisChanged;
+
+        _servo.SetValue(SteeringServo_Neutral);
+        setInformation_Value(SteeringServo_Neutral);
+        _servo.Stop();
 
         return Task.CompletedTask;
     }
@@ -72,4 +75,8 @@ public sealed class Steering_Servo : IHostedService
     }
 
     private Action<byte> setInformation_Value = (value) => { };
+
+    public const byte SteeringServo_Minimum = 128;
+    public const byte SteeringServo_Neutral = 0;
+    public const byte SteeringServo_Maximum = 127; // 4% of -128 as unsigned byte
 }
