@@ -21,7 +21,7 @@ class Program
             .ConfigureHostConfiguration(configurationBuilder => {
                 configurationBuilder
                     .AddJsonFile("./appsettings.json")
-                    .AddJsonFile("./appsettings.local.json");
+                    .AddJsonFile("./appsettings.local.json", optional: true);
             })
             .ConfigureServices((hostBuilder, services) =>
             {
