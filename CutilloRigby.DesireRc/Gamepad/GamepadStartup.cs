@@ -8,11 +8,11 @@ internal sealed class GamepadStartup : IConfigureServices
 {
     public void ConfigureServices(IServiceCollection serviceCollection, IConfiguration configuration)
     {
-        var gamepadSettingsSection = configuration.GetSection("GamepadSettings");
-        var gamepadSettingsConfiguration = gamepadSettingsSection.Get<GamepadConfiguration>(options => options.ErrorOnUnknownConfiguration = true);
+        var gamepadSection = configuration.GetSection("Gamepad");
+        var gamepadConfiguration = gamepadSection.Get<GamepadConfiguration>(options => options.ErrorOnUnknownConfiguration = true);
 
-        serviceCollection.AddGamepadState(gamepadSettingsConfiguration.Name, gamepadSettingsConfiguration.DeviceFile,
-            gamepadSettingsConfiguration.Axes, gamepadSettingsConfiguration.Buttons);
+        serviceCollection.AddGamepadState(gamepadConfiguration.Name, gamepadConfiguration.DeviceFile,
+            gamepadConfiguration.Axes, gamepadConfiguration.Buttons);
             
         serviceCollection.AddGamepadController();
 

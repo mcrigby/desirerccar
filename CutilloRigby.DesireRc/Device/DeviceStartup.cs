@@ -15,5 +15,7 @@ internal sealed class DeviceStartup : IConfigureServices
 
         serviceCollection.AddHostedService<Steering_Servo>();
         serviceCollection.AddHostedService<TBLE01_ESC>();
+
+        serviceCollection.AddHostedService<UltimateGPS>();
     }
 }

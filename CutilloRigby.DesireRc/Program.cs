@@ -20,8 +20,8 @@ class Program
             )
             .ConfigureHostConfiguration(configurationBuilder => {
                 configurationBuilder
-                    .AddJsonFile("./appsettings.gamepad.json")
-                    .AddJsonFile("./appsettings.servo.json");
+                    .AddJsonFile("./appsettings.json")
+                    .AddJsonFile("./appsettings.local.json");
             })
             .ConfigureServices((hostBuilder, services) =>
             {
