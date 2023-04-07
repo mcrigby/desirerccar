@@ -31,7 +31,7 @@ public sealed class UltimateGPS : IHostedService
         _gpsChanged.Changed += (s, e) => currentPosition(e.Location, e.Bearing, e.SpeedOverGround);
 
         _gpioController = gpioController ?? throw new ArgumentNullException(nameof(gpioController));
-        _gpioController.OpenPin(gpsEnabled, PinMode.Output, PinValue.High);
+        _gpioController.OpenPin(gpsEnabled, PinMode.Output, PinValue.Low);
         _gpioController.OpenPin(gpsFix, PinMode.Input);
         _gpioController.RegisterCallbackForPinValueChangedEvent(gpsFix, PinEventTypes.Rising, gpsFix_PinRising);
 

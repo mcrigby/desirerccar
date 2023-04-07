@@ -54,10 +54,10 @@ internal sealed class CompassCalibrationService : IHostedService
         {
             beginCalibration();
 
-            _steering.SetValue(127);
-            _tble01.SetValue(2);
+            _steering.SetValue(23);
+            _tble01.SetValue(1);
 
-            //_hmc6352.BeginCalibration();
+            _hmc6352.BeginCalibration();
 
             while(!cancellationToken.IsCancellationRequested)
             {
@@ -76,7 +76,7 @@ internal sealed class CompassCalibrationService : IHostedService
             if (calibrationTime < minimumCalibrationTime)
                 await Task.Delay (minimumCalibrationTime - calibrationTime);
             
-            //_hmc6352.EndCalibration();
+            _hmc6352.EndCalibration();
             endCalibration();
         }
     }

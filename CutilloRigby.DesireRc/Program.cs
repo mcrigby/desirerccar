@@ -15,13 +15,15 @@ class Program
             {
                 options.ShutdownTimeout = TimeSpan.FromSeconds(30);
             })
-            .ConfigureLogging(builder => 
-                builder.AddConsole()
-            )
             .ConfigureHostConfiguration(configurationBuilder => {
                 configurationBuilder
                     .AddJsonFile("./appsettings.json")
                     .AddJsonFile("./appsettings.local.json", optional: true);
+            })
+            .ConfigureLogging((hostBuilder, logBuilder) => {
+                logBuilder.ClearProviders();
+                logBuilder.AddConfiguration(hostBuilder.Configuration.GetSection("Logging"));
+                logBuilder.AddConsole();
             })
             .ConfigureServices((hostBuilder, services) =>
             {
@@ -32,6 +34,10 @@ class Program
 
         var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
         lifetime.ApplicationStopping.Register(async () => await host.StopAsync());
+
+        //var timer = new Timer((hmc6352) => {
+        //    Console.WriteLine(((Iot.Device.HMC6352.HMC6352)hmc6352).Heading.Degrees);
+        //}, host.Services.GetRequiredService<Iot.Device.HMC6352.HMC6352>(), 0, 1000);
 
         await host.StartAsync(lifetime.ApplicationStopping);
         await host.WaitForShutdownAsync(lifetime.ApplicationStopped);
