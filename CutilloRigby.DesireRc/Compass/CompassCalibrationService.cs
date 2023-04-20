@@ -1,7 +1,7 @@
 using CutilloRigby.DesireRc.Device;
+using CutilloRigby.Device.HMC6352;
 using CutilloRigby.Input.Gamepad;
 using CutilloRigby.Output.Servo;
-using Iot.Device.HMC6352;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -37,49 +37,26 @@ internal sealed class CompassCalibrationService : IHostedService
             return;
         }
 
-        calibrateCancellationToken = new CancellationTokenSource(180000);
-        Calibrate(calibrateCancellationToken.Token).Forget();
+        calibrateCancellationToken = new CancellationTokenSource();
+        _hmc6352.Calibrate(TimeSpan.FromMinutes(3), calibrateCancellationToken.Token,
+            beginCalibration: () => {
+                beginCalibration();
+
+                _steering.SetValue(23);
+                _tble01.SetValue(1);
+            },
+            calibrationInProgress: calibrationInProgress,
+            finalisingCalibration: () =>{
+                finalisingCalibration();
+
+                _tble01.SetValue(0);
+                _steering.SetValue(0);
+            },
+            endCalibration: endCalibration
+        ).Forget();
     }
 
     private CancellationTokenSource? calibrateCancellationToken = null;
-
-    private async Task Calibrate(CancellationToken cancellationToken)
-    {
-        const short minimumCalibrationTime = 6000;
-        const short calibrationStepTime = 500;
-
-        int calibrationTime = 0;
-
-        try
-        {
-            beginCalibration();
-
-            _steering.SetValue(23);
-            _tble01.SetValue(1);
-
-            _hmc6352.BeginCalibration();
-
-            while(!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(calibrationStepTime);
-                calibrationInProgress();
-                calibrationTime += calibrationStepTime;
-            }
-        }
-        finally
-        {
-            finalisingCalibration();
-
-            _tble01.SetValue(0);
-            _steering.SetValue(0);
-
-            if (calibrationTime < minimumCalibrationTime)
-                await Task.Delay (minimumCalibrationTime - calibrationTime);
-            
-            _hmc6352.EndCalibration();
-            endCalibration();
-        }
-    }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -97,8 +74,8 @@ internal sealed class CompassCalibrationService : IHostedService
         {
             beginCalibration = () =>
                 logger.LogInformation("Beginning Calibration");
-            calibrationInProgress = () =>
-                logger.LogInformation("Calibration in Progress");
+            calibrationInProgress = d =>
+                logger.LogInformation("Calibration in Progress. {elapsedMs}ms elapsed.", d);
             finalisingCalibration = () =>
                 logger.LogInformation("Finalising Calibration");
             endCalibration = () =>
@@ -107,7 +84,7 @@ internal sealed class CompassCalibrationService : IHostedService
     }
 
     Action beginCalibration = () => { };
-    Action calibrationInProgress = () => { };
+    Action<uint> calibrationInProgress = d => { };
     Action finalisingCalibration= () => { };
     Action endCalibration = () => { };
 }

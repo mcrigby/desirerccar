@@ -12,7 +12,7 @@
     <PackageReference Include="CutilloRigby.Input.GPS.Abstractions" Version="1.0.1" />
     <PackageReference Include="CutilloRigby.Output.Servo.Abstractions" Version="1.0.5" />
     <PackageReference Include="System.Device.Gpio" Version="2.2.0" />
-    <PackageReference Include="Iot.Device.Bindings.HMC6352" Version="2.2.0" />
+    <PackageReference Include="CutilloRigby.Device.HMC6352" Version="1.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
   </ItemGroup>
