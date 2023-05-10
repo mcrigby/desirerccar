@@ -2,6 +2,26 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "deploybuild",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build", "${workspaceFolder}/CutilloRigby.DesireRc/CutilloRigby.DesireRc.csproj",
+                "-a", "arm",
+                "-o", "${workspaceFolder}/bld/${workspaceFolderBasename}"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "deploy",
+            "dependsOn": [ "deploybuild" ],
+            "command": "/usr/bin/scp",
+            "type": "process",
+            "args": [
+                "-r", "${workspaceFolder}/bld/${workspaceFolderBasename}", "pi@desirerccar:/home/pi/bld"
+            ]
+        },
+        {
             "label": "build",
             "command": "dotnet",
             "type": "process",
