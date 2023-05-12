@@ -13,9 +13,10 @@ internal sealed class DeviceStartup : IConfigureServices
         serviceCollection.AddSingleton<StatusLed>();
         serviceCollection.AddSingleton<OnBoardButton>();
 
+        serviceCollection.AddHostedService<Ignition>();
         serviceCollection.AddHostedService<Steering_Servo>();
         serviceCollection.AddHostedService<TBLE01_ESC>();
-
+        
         serviceCollection.AddHostedService<UltimateGPS>();
     }
 }
