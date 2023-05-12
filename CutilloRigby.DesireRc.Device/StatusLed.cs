@@ -6,7 +6,6 @@ namespace CutilloRigby.DesireRc.Device;
 public sealed class StatusLed : IDisposable
 {
     private readonly GpioController _gpioController;
-    private readonly ILogger _logger;
     
     private const int redLed = 22;
     private const int greenLed = 23;
@@ -15,7 +14,7 @@ public sealed class StatusLed : IDisposable
     public StatusLed(GpioController gpioController, ILogger<StatusLed> logger)
     {
         _gpioController = gpioController ?? throw new ArgumentNullException(nameof(gpioController));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        SetLoggers(logger ?? throw new ArgumentNullException(nameof(logger)));
 
         _gpioController.OpenPin(redLed, PinMode.Output, PinValue.Low);
         _gpioController.OpenPin(greenLed, PinMode.Output, PinValue.Low);
@@ -25,22 +24,19 @@ public sealed class StatusLed : IDisposable
     public void SetRedLed(bool value)
     {
         _gpioController.Write(redLed, value ? PinValue.High : PinValue.Low);
-        if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("Red LED Set to {value}", value);
+        information_SetValue("Red", value);
     }
 
     public void SetGreenLed(bool value)
     {
         _gpioController.Write(greenLed, value ? PinValue.High : PinValue.Low);
-        if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("Green LED Set to {value}", value);
+        information_SetValue("Green", value);
     }
 
     public void SetBlueLed(bool value)
     {
         _gpioController.Write(blueLed, value ? PinValue.High : PinValue.Low);
-        if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("Blue LED Set to {value}", value);
+        information_SetValue("Blue", value);
     }
 
     public void Dispose()
@@ -49,4 +45,15 @@ public sealed class StatusLed : IDisposable
         _gpioController.ClosePin(greenLed);
         _gpioController.ClosePin(blueLed);
     }
+
+    private void SetLoggers(ILogger logger)
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            information_SetValue = (colour, value) =>
+                logger.LogInformation("{colour} LED is set to {value}", colour, value);
+        }
+    }
+    
+    Action<string, bool> information_SetValue = (colour, value) => { };
 }
