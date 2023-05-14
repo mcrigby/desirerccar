@@ -8,7 +8,8 @@ namespace CutilloRigby.DesireRc.Device;
 public sealed class Ignition : IHostedService
 {
     private const int IgnitionHoldTime = 3000;
-    private const int ExtinguishIdleTime = 5000;
+    private const int ExtinguishIdleTime = 10000;
+    private const int ExtinguishIdleTimeRetry = 5000;
 
     private readonly GpioController _gpioController;
     private readonly IGamepadState _gamepadState;
@@ -84,6 +85,12 @@ public sealed class Ignition : IHostedService
     }
     private void IdleTimer_Callback(object state)
     {
+        if (!_gamepadState.IsIdle())
+        {
+            _idleTimer.Change(ExtinguishIdleTimeRetry, Timeout.Infinite);
+            return;
+        }
+
         SetIgnition(false);
     }
 
