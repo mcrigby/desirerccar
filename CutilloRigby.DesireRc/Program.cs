@@ -14,6 +14,7 @@ class Program
             .ConfigureHostOptions(options =>
             {
                 options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+                options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
             })
             .ConfigureHostConfiguration(configurationBuilder => {
                 configurationBuilder
