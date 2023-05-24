@@ -1,5 +1,6 @@
 using CutilloRigby.Input.Gamepad;
 using CutilloRigby.Output.Servo;
+using CutilloRigby.Output.Servo.Remappable;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

@@ -1,5 +1,6 @@
 using CutilloRigby.DesireRc.Device;
 using CutilloRigby.Output.Servo;
+using CutilloRigby.Output.Servo.Remappable;
 using CutilloRigby.Startup;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,17 +18,11 @@ internal sealed class ServoStartup : IConfigureServices
 
         serviceCollection.AddServoConfiguration(servoConfigurationDictionary);
         serviceCollection.AddServoMap(configure: factory => {
-            var steeringServoMap = ServoMap.StandardServoMap(
+            factory.AddServoMap<Steering_Servo>(ServoMap.StandardServoMap(
                 rangeMin: -128, rangeMax: 127, dutyCycleMin: 0.056f, dutyCycleNeutral: 0.075f,
-                dutyCycleMax: 0.094f, name: "Steering Servo Map");
+                dutyCycleMax: 0.094f, name: "Steering Servo Map"));
 
-            factory.AddServoMap<Steering_Servo>(
-                new RemappableServoMap(new Dictionary<byte, IServoMap>{
-                    {0, steeringServoMap},
-                    {1, steeringServoMap.Reverse()}
-                }));
-
-            factory.AddServoMap<TBLE01_ESC>(new RemappableServoMap(new Dictionary<byte, IServoMap>{
+            factory.AddRemappableServoMap<TBLE01_ESC>(new RemappableServoMap(new Dictionary<byte, IServoMap>{
                 {0, ServoMap.SplitDualRangeServoMap(
                     rangeMin: -128, rangeNeutral: 0, rangeMax: 127, dutyCycleNeutral: 0.075f,
                     lowRangeDutyCycleMin: 0.05f, lowRangeDutyCycleMax: 0.06f, 
@@ -39,7 +34,7 @@ internal sealed class ServoStartup : IConfigureServices
                     highRangeDutyCycleMin: 0.08f, highRangeDutyCycleMax: 0.095f,
                     name: "TBLE01 Boost")}
             }));
-        });
+        }).AddRemappableServoMap();
         serviceCollection.AddServo<Steering_Servo>();
         serviceCollection.AddServo<TBLE01_ESC>();
     }
